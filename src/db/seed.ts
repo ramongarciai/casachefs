@@ -3,49 +3,12 @@ import "./load-env";
 import { db } from "./index";
 import { menuItems } from "./schema/menu";
 import { pricingBands, bandMenuItems } from "./schema/pricing";
+import { feeRules } from "./schema/fee-rules";
+import { PRICING_BANDS_SEED_DATA as BANDS } from "./pricing-bands-data";
 import type { menuCategoryEnum, allergenEnum } from "./schema/menu";
 
 type Allergen = (typeof allergenEnum.enumValues)[number];
 type Category = (typeof menuCategoryEnum.enumValues)[number];
-
-const BANDS = [
-  {
-    code: "BL_STD",
-    serviceLine: "box_lunch" as const,
-    label: "Box Lunch Standard",
-    minPricePerPersonCents: 820,
-    maxPricePerPersonCents: 999,
-    deliveryPct: 0,
-    tipPct: 0,
-  },
-  {
-    code: "BL_PLUS",
-    serviceLine: "box_lunch" as const,
-    label: "Box Lunch Plus",
-    minPricePerPersonCents: 1200,
-    maxPricePerPersonCents: 1500,
-    deliveryPct: 1000,
-    tipPct: 0,
-  },
-  {
-    code: "CAT_STD",
-    serviceLine: "event_catering" as const,
-    label: "Catering Standard",
-    minPricePerPersonCents: 2400,
-    maxPricePerPersonCents: 3199,
-    deliveryPct: 300,
-    tipPct: 1000,
-  },
-  {
-    code: "CAT_PREM",
-    serviceLine: "event_catering" as const,
-    label: "Catering Premium",
-    minPricePerPersonCents: 3200,
-    maxPricePerPersonCents: 4000,
-    deliveryPct: 300,
-    tipPct: 1000,
-  },
-];
 
 interface SeedItem {
   category: Category;
@@ -383,7 +346,23 @@ const ITEMS: SeedItem[] = [
   },
 ];
 
+const DEFAULT_FEE_RULES = {
+  id: "default",
+  taxRateBps: 825, // 8.25% — Houston-area combined TX sales tax rate
+  boxLunchMinGuests: 5,
+  boxLunchMinLeadDays: 2,
+  cateringMinGuests: 15,
+  cateringMinLeadDays: 5,
+  deliveryRadiusMiles: 30,
+};
+
 async function main() {
+  console.log("Seeding fee rules...");
+  await db
+    .insert(feeRules)
+    .values(DEFAULT_FEE_RULES)
+    .onConflictDoUpdate({ target: feeRules.id, set: DEFAULT_FEE_RULES });
+
   console.log(`Seeding ${BANDS.length} pricing bands...`);
   for (const band of BANDS) {
     await db

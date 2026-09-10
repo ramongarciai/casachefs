@@ -16,8 +16,8 @@ export const pricingBands = pgTable("pricing_bands", {
   label: text("label").notNull(),
   minPricePerPersonCents: integer("min_price_per_person_cents").notNull(),
   maxPricePerPersonCents: integer("max_price_per_person_cents").notNull(),
-  deliveryPct: integer("delivery_pct_bps").notNull(), // basis points, e.g. 1000 = 10%
-  tipPct: integer("tip_pct_bps").notNull(),
+  deliveryPctBps: integer("delivery_pct_bps").notNull(), // basis points, e.g. 1000 = 10%
+  tipPctBps: integer("tip_pct_bps").notNull(),
   active: boolean("active").notNull().default(true),
 });
 

@@ -43,7 +43,19 @@
 - Real Supabase Storage bucket if that's the chosen photo host (or swap to Cloudinary) — the local `public/uploads` fallback works but isn't durable across deploys.
 - No hard-delete for menu items yet (spec only asked for active/inactive) — flag if you want deletion too.
 
-## Phase 3 — Pricing engine: not started
+## Phase 3 — Pricing engine ✅ done
+
+- `src/lib/pricing/` — pure functions, no UI, no DB access (dependency-injected instead), exactly as the spec asked:
+  - `resolveBand()` implements the spec's pseudocode literally (divide by guests, then by the band's fee %, for Mode B classification). Added a `1e-6` cent floating-point epsilon on the boundary comparison — without it, Mode B's division can miss an exact integer-cent boundary by a fraction of a cent. `gapPolicy()` is the single function implementing the locked Q1 decision (no band assigned, no explanation) for anything between bands or outside $8.20–$40.00.
+  - `calculateTotals()` implements section 2.4 exactly, mode-aware: Mode A charges the customer's typed per-person number verbatim and adds delivery/tip/tax on top; Mode B back-solves `food_subtotal` from the fixed total first and derives price-per-person from that, never the reverse. Also exports `computeBudgetOverageCents()` for the Mode B guardrail phase 6 will need.
+  - **Tax base is a judgment call, not one of the six locked decisions**: computed on food + add-ons + delivery, excluding gratuity. Flag this to an accountant before it handles real money — it's isolated to one line in `totals.ts` if it needs to change.
+  - `dto.ts` — `toPublicMenuItem()` is a strict field allowlist (never a spread) and `filterMenuItemsForQuote()` combines band eligibility, active/availability window, and allergen exclusion.
+  - `buildQuote()` composes all of the above into the one function a customer-facing route will call once the phase 4 wizard exists.
+- `fee_rules` table (singleton row): tax rate (8.25%, Houston-area default) plus the Q5 minimums (box lunch 5 guests/2 days, catering 15 guests/5 days, 30-mile radius) — consolidated here since the spec's data model doesn't list a separate settings table.
+- Fixed a naming inconsistency from phase 2 while touching this code: `pricingBands.deliveryPct`/`.tipPct` (TS property names) are renamed to `.deliveryPctBps`/`.tipPctBps` to match what they actually store (basis points, not raw percent) — no DB migration needed, the SQL column names were already `_bps`-suffixed. Extracted the 4 real bands into `src/db/pricing-bands-data.ts` so `seed.ts` and the test fixtures share one source of truth instead of two hand-typed copies that could drift apart.
+- **41 unit tests, all passing** (`npm run test`, Vitest): both budget modes at all 8 spec boundaries ($8.20/$9.99/$12/$15/$24/$31.99/$32/$40), one value inside each named gap (both modes), the totals formulas verified with hand-computed expected numbers, item-filtering edge cases (allergens, inactive, availability window), and `tests/no-leak.spec.ts` asserting `buildQuote()`'s output never contains `band`/`tier`/`internal_cost`/`cost`/`margin`/`min_pp`/`max_pp`/any of the 4 band codes.
+- **Leak test caveat**: no customer-facing route exists yet (that's phase 4), so this test exercises `buildQuote()` directly rather than an HTTP endpoint. Once phase 4 wraps it in a server action/API route, re-point or duplicate this assertion at the wire-format response so it covers the actual public surface too.
+- Also verified the full app still builds/lints/typechecks clean after these changes. Noticed the local PGlite dev DB occasionally throws a `RuntimeError: Aborted()` under `next build`'s parallel static-generation workers (a concurrency quirk of the embedded WASM DB when multiple build workers hit the same on-disk store at once) — intermittent, doesn't affect build output, and won't occur in production against real Postgres. Not worth engineering around for a dev-only fallback.
 
 ## Phase 4 — Customer wizard: not started
 
