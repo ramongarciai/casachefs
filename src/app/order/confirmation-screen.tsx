@@ -1,0 +1,19 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function ConfirmationScreen({ orderId }: { orderId: string }) {
+  return (
+    <Card className="max-w-md">
+      <CardHeader>
+        <CardTitle>Request received</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
+        <p>
+          Thanks! This is a preliminary request, not a confirmed order — our team will review it and follow up
+          with a formal quote.
+        </p>
+        <p>We&apos;ve also emailed you a sign-in link so you can check back on this request any time.</p>
+        <p className="text-xs">Reference: {orderId}</p>
+      </CardContent>
+    </Card>
+  );
+}

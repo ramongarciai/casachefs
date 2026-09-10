@@ -57,7 +57,37 @@
 - **Leak test caveat**: no customer-facing route exists yet (that's phase 4), so this test exercises `buildQuote()` directly rather than an HTTP endpoint. Once phase 4 wraps it in a server action/API route, re-point or duplicate this assertion at the wire-format response so it covers the actual public surface too.
 - Also verified the full app still builds/lints/typechecks clean after these changes. Noticed the local PGlite dev DB occasionally throws a `RuntimeError: Aborted()` under `next build`'s parallel static-generation workers (a concurrency quirk of the embedded WASM DB when multiple build workers hit the same on-disk store at once) — intermittent, doesn't affect build output, and won't occur in production against real Postgres. Not worth engineering around for a dev-only fallback.
 
-## Phase 4 — Customer wizard: not started
+## Phase 4 — Customer wizard ✅ done
+
+- `/order` — the 6-step wizard (`src/app/order/`), mobile-first, one decision per screen, progress bar, back never loses data (draft held in React state + mirrored to `localStorage` on every change, restored on load). Frozen food (step 1's 5th card) routes to a `/order/frozen` "coming soon" stub — its real catalog flow is phase 8/section 5 scope, not this budget-driven wizard.
+  - **Step 1**: 5 service-type cards.
+  - **Step 2**: date/time/guest count/address, validated client-side against `fee_rules`' admin-editable minimums (fetched server-side, passed down as props — never hardcoded). Delivery-radius is informational copy only; enforcing it for real needs a geocoding API key we don't have, flagged below.
+  - **Step 3**: allergen/diet/low-spice chips, each capturing an affected-guest count, plus free text — stored in the draft, persisted as `order_restrictions` rows on submit.
+  - **Step 4**: the per-person/total toggle with the exact spec-mandated copy ("added on top" vs "included"), calls the new `getQuoteAction` server action.
+  - **Step 5**: shows the curated packages for the resolved band (never the band itself) with per-category item swaps; a package is only offered if every one of its items survives the customer's declared restrictions. Summary bar shows price-per-person only, never a per-item price.
+  - **Step 6**: contact form + full itemized preview labeled "Preliminary request — not a confirmed order," submits via `submitOrderAction`.
+  - **Gap screen**: shown whenever `resolveBand` returns "gap" — a plain callback form (name/email/phone/note), no explanation of why, persisted to a new `callback_requests` table.
+- **Extended the pricing engine** (`src/lib/pricing/dto.ts`, `buildQuote.ts`) with `requiredDiets` and `maxSpiceLevel` filtering (diet booleans and the "low-spice" restriction weren't needed until the wizard actually had to filter on them) — added 2 more passing tests for this, no regressions to the 41 from phase 3.
+- **New schema**: `addresses`, `orders`, `order_items`, `order_restrictions`, `callback_requests`, `packages`, `package_items`. `orders.bandCode` and all cost fields are populated but — like everywhere else in this codebase — never serialized to a customer-facing response; the wizard's server actions only ever return the `buildQuote()`-shaped DTO.
+- **Every total is recomputed from scratch server-side at submission time** (`submitOrderAction` calls `resolveBand`/`calculateTotals` again from the raw inputs, never trusting the client-cached quote) — protects against a stale quote or a tampered request. Submitted item IDs are also re-filtered against a freshly computed eligibility set before being persisted.
+- **Packages are seed-only** — 2 curated packages per band (8 total, built from the phase-2 sample items, sharing one source of truth via `src/db/pricing-bands-data.ts`-style keying in `seed.ts`). There's no admin CRUD for packages yet (menu manager only covers items); flagged below since a real admin will eventually need to curate these instead of me hand-editing `seed.ts`.
+- **Emails** (`src/lib/email.ts`): order confirmation to the customer, notification to `ADMIN_NOTIFICATION_EMAIL`, and a magic-link sign-in triggered via `signIn("resend", { redirect: false })` — all three are best-effort (`Promise.allSettled`, logged not thrown) so a Resend outage can never lose a submitted order. Untestable end-to-end here since `AUTH_RESEND_KEY` is still a placeholder.
+- **Verified with a real headless browser, not just `tsc`/curl** — this wizard is entirely client-rendered until hydration (curl only sees an empty shell), so I installed Puppeteer and drove the actual UI. This machine runs macOS 12.7.6, and current Chrome-for-Testing builds refuse to launch on it (`dlopen` failure — needs a newer macOS `VideoToolbox`); had to pin an older Chrome build (`120.0.6099.109`) to get a working headless browser at all. Ran two full flows end to end and confirmed the resulting DB rows directly:
+  - Happy path: event catering, $30/person, shellfish allergy declared → correctly resolved `CAT_STD`, shellfish item excluded from both the shown items and swap alternatives, order + 6 order_items + 1 order_restriction + address + new customer user all created correctly, `grandTotalCents` matched the hand-verified formula exactly (72899 = 60000 food + 1800 delivery + 6000 tip + 5099 tax).
+  - Gap path: box lunch, $11.00/person (inside the $10–$11.99 gap) → correctly showed the "let's talk" screen with no explanation, callback form submission persisted to `callback_requests`.
+- **Found and fixed a real bug this way**: `/order` was being statically prerendered at build time (baking in whatever `fee_rules` existed in the DB at build time), because reading from the DB isn't automatically treated as a dynamic signal by Next's static-by-default rendering. Added `export const dynamic = "force-dynamic"` — this route must always reflect live, admin-editable settings.
+- **Found a real limitation of the PGlite dev fallback**: after the Puppeteer run's burst of concurrent queries, the on-disk PGlite store became unreadable (`RuntimeError: Aborted()` on every subsequent query, not just the flaky one-off noted in phase 3) and had to be wiped and reseeded to recover. This is specific to the embedded WASM dev database under concurrent load — real Postgres via postgres-js doesn't have this failure mode. Treat local PGlite as fine for quick manual checks, but don't be surprised if a heavy local test run corrupts it; `rm -rf .pglite-data && npm run db:migrate && npm run db:seed` recovers it in seconds.
+
+### Deliberately deferred to phase 5 (Accounts) per the build-phase split
+
+- No saved-address reuse or the "same address as last time or new address?" prompt — every wizard run today is anonymous-first; a signed-in returning customer isn't pre-filled or offered "Reorder" yet.
+- The account created at step 6 is a bare `users` row (email/name/role=customer) — no dedicated `customer_profiles` record, no order-history view for the customer yet.
+
+### Still needed / gaps to flag
+
+- Delivery-radius (30mi) is informational copy only, not enforced — needs a geocoding API key.
+- No admin UI to curate packages — they're seed-data only, edit via Drizzle Studio or re-seed for now.
+- Emails are wired up but unverified against a real Resend account/domain.
 
 ## Phase 5 — Accounts (reorder, saved addresses): not started
 

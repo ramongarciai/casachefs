@@ -74,4 +74,35 @@ describe("filterMenuItemsForQuote", () => {
     });
     expect(result).toHaveLength(0);
   });
+
+  it("requires every declared diet restriction to be satisfied", () => {
+    // item-chicken is dairyFree + nutFree + porkFree but not vegetarian.
+    const glutenFreeOnly = filterMenuItemsForQuote({
+      items: SAMPLE_ITEMS,
+      eligibleItemIds: BAND_MENU_ITEM_IDS.CAT_STD,
+      requiredDiets: ["dairyFree"],
+    });
+    expect(glutenFreeOnly.map((i) => i.id)).toEqual(["item-chicken", "item-shrimp"]);
+
+    const vegetarianOnly = filterMenuItemsForQuote({
+      items: SAMPLE_ITEMS,
+      eligibleItemIds: BAND_MENU_ITEM_IDS.CAT_STD,
+      requiredDiets: ["vegetarian"],
+    });
+    expect(vegetarianOnly).toHaveLength(0);
+  });
+
+  it("excludes items above the declared low-spice cap", () => {
+    const items = [
+      ...SAMPLE_ITEMS,
+      { ...SAMPLE_ITEMS[0], id: "item-mild", spiceLevel: "mild" },
+      { ...SAMPLE_ITEMS[0], id: "item-hot", spiceLevel: "hot" },
+    ];
+    const result = filterMenuItemsForQuote({
+      items,
+      eligibleItemIds: ["item-mild", "item-hot"],
+      maxSpiceLevel: "mild",
+    });
+    expect(result.map((i) => i.id)).toEqual(["item-mild"]);
+  });
 });

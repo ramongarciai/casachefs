@@ -4,6 +4,7 @@ import { db } from "./index";
 import { menuItems } from "./schema/menu";
 import { pricingBands, bandMenuItems } from "./schema/pricing";
 import { feeRules } from "./schema/fee-rules";
+import { packages, packageItems } from "./schema/packages";
 import { PRICING_BANDS_SEED_DATA as BANDS } from "./pricing-bands-data";
 import type { menuCategoryEnum, allergenEnum } from "./schema/menu";
 
@@ -11,6 +12,8 @@ type Allergen = (typeof allergenEnum.enumValues)[number];
 type Category = (typeof menuCategoryEnum.enumValues)[number];
 
 interface SeedItem {
+  /** Stable lookup key used to reference this item from PACKAGES below. */
+  key: string;
   category: Category;
   nameEn: string;
   nameEs: string;
@@ -42,6 +45,7 @@ const ITEMS: SeedItem[] = [
   // Entradas
   {
     category: "entrada",
+    key: "shrimp_ceviche",
     nameEn: "Shrimp Ceviche",
     nameEs: "Ceviche de Camarón",
     descriptionEn: "Gulf shrimp cured in lime with tomato, onion, and cilantro.",
@@ -54,6 +58,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "entrada",
+    key: "beef_empanadas",
     nameEn: "Beef Empanadas",
     nameEs: "Empanadas de Res",
     descriptionEn: "Hand-folded pastry filled with seasoned ground beef.",
@@ -64,6 +69,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "entrada",
+    key: "ham_croquettes",
     nameEn: "Ham Croquettes",
     nameEs: "Croquetas de Jamón",
     descriptionEn: "Crispy breaded croquettes with a creamy ham filling.",
@@ -76,6 +82,7 @@ const ITEMS: SeedItem[] = [
   // Platos fuertes
   {
     category: "plato_fuerte",
+    key: "chicken",
     nameEn: "Grilled Chicken Breast",
     nameEs: "Pollo a la Plancha",
     descriptionEn: "Marinated chicken breast grilled and sliced.",
@@ -89,6 +96,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "plato_fuerte",
+    key: "carne_asada",
     nameEn: "Grilled Skirt Steak",
     nameEs: "Carne Asada",
     descriptionEn: "Skirt steak marinated in citrus and grilled over open flame.",
@@ -100,6 +108,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "plato_fuerte",
+    key: "veracruz_fish",
     nameEn: "Veracruz-Style Fish",
     nameEs: "Pescado a la Veracruzana",
     descriptionEn: "White fish simmered in a tomato, olive, and caper sauce.",
@@ -113,6 +122,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "plato_fuerte",
+    key: "chicken_enchiladas",
     nameEn: "Green Chicken Enchiladas",
     nameEs: "Enchiladas Verdes de Pollo",
     descriptionEn: "Corn tortillas filled with chicken, bathed in tomatillo sauce and crema.",
@@ -127,6 +137,7 @@ const ITEMS: SeedItem[] = [
   // Ensaladas
   {
     category: "ensalada",
+    key: "caesar_salad",
     nameEn: "Caesar Salad",
     nameEs: "Ensalada César",
     descriptionEn: "Romaine, parmesan, croutons, and classic Caesar dressing.",
@@ -138,6 +149,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "ensalada",
+    key: "cactus_salad",
     nameEn: "Cactus Salad",
     nameEs: "Ensalada de Nopales",
     descriptionEn: "Grilled cactus paddles with tomato, onion, and queso fresco on the side.",
@@ -149,6 +161,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "ensalada",
+    key: "tropical_salad",
     nameEn: "Tropical Salad",
     nameEs: "Ensalada Tropical",
     descriptionEn: "Mixed greens with mango, jicama, and a citrus vinaigrette.",
@@ -163,6 +176,7 @@ const ITEMS: SeedItem[] = [
   // Canapés
   {
     category: "canape",
+    key: "salmon_canape",
     nameEn: "Smoked Salmon Canapé",
     nameEs: "Canapé de Salmón Ahumado",
     descriptionEn: "Toasted baguette, herbed cream cheese, and smoked salmon.",
@@ -173,6 +187,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "canape",
+    key: "caprese_canape",
     nameEn: "Caprese Canapé",
     nameEs: "Canapé Caprese",
     descriptionEn: "Cherry tomato, fresh mozzarella, and basil on a skewer.",
@@ -187,6 +202,7 @@ const ITEMS: SeedItem[] = [
   // Entremeses
   {
     category: "entremes",
+    key: "guacamole",
     nameEn: "Guacamole & Chips",
     nameEs: "Tabla de Guacamole y Totopos",
     descriptionEn: "Fresh guacamole with house-fried corn tortilla chips.",
@@ -198,6 +214,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "entremes",
+    key: "queso_fundido",
     nameEn: "Melted Cheese Dip",
     nameEs: "Queso Fundido",
     descriptionEn: "Melted cheese with roasted poblano strips, served with tortillas.",
@@ -212,6 +229,7 @@ const ITEMS: SeedItem[] = [
   // Tablas de charcutería
   {
     category: "tabla_charcuteria",
+    key: "charcuterie_classic",
     nameEn: "Classic Charcuterie Board",
     nameEs: "Tabla Clásica de Quesos y Carnes Frías",
     descriptionEn: "Cured meats, artisan cheeses, nuts, and preserves.",
@@ -222,6 +240,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "tabla_charcuteria",
+    key: "charcuterie_mediterranean",
     nameEn: "Mediterranean Board",
     nameEs: "Tabla Mediterránea",
     descriptionEn: "Hummus, olives, feta, and crackers.",
@@ -235,6 +254,7 @@ const ITEMS: SeedItem[] = [
   // Postres
   {
     category: "postre",
+    key: "tres_leches",
     nameEn: "Tres Leches Cake",
     nameEs: "Pastel de Tres Leches",
     descriptionEn: "Sponge cake soaked in three milks, topped with whipped cream.",
@@ -246,6 +266,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "postre",
+    key: "flan",
     nameEn: "Vanilla Flan",
     nameEs: "Flan de Vainilla",
     descriptionEn: "Silky vanilla custard with caramel sauce.",
@@ -258,6 +279,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "postre",
+    key: "brownie",
     nameEn: "Chocolate Brownie",
     nameEs: "Brownie de Chocolate",
     descriptionEn: "Fudgy chocolate brownie, walnuts optional.",
@@ -271,6 +293,7 @@ const ITEMS: SeedItem[] = [
   // Bebidas
   {
     category: "bebida",
+    key: "agua_fresca",
     nameEn: "Hibiscus Water",
     nameEs: "Agua Fresca de Jamaica",
     descriptionEn: "House-made hibiscus flower agua fresca.",
@@ -282,6 +305,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "bebida",
+    key: "cafe_de_olla",
     nameEn: "Spiced Coffee Service",
     nameEs: "Café de Olla",
     descriptionEn: "Cinnamon and piloncillo spiced coffee, served hot.",
@@ -295,6 +319,7 @@ const ITEMS: SeedItem[] = [
   // Guarniciones
   {
     category: "guarnicion",
+    key: "arroz_rojo",
     nameEn: "Mexican Red Rice",
     nameEs: "Arroz Rojo",
     descriptionEn: "Rice simmered with tomato, garlic, and vegetables.",
@@ -306,6 +331,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "guarnicion",
+    key: "frijoles_charros",
     nameEn: "Charro Beans",
     nameEs: "Frijoles Charros",
     descriptionEn: "Pinto beans simmered with bacon, tomato, and onion.",
@@ -319,6 +345,7 @@ const ITEMS: SeedItem[] = [
   // Frozen (public catalog, no bands — published price per unit)
   {
     category: "frozen",
+    key: "frozen_tamales",
     nameEn: "Frozen Pork Tamales",
     nameEs: "Tamales de Puerco Congelados",
     descriptionEn: "Hand-made pork tamales, frozen and ready to steam.",
@@ -332,6 +359,7 @@ const ITEMS: SeedItem[] = [
   },
   {
     category: "frozen",
+    key: "frozen_salsa",
     nameEn: "Frozen Green Salsa",
     nameEs: "Salsa Verde Congelada",
     descriptionEn: "Tomatillo and roasted poblano salsa, frozen in bulk.",
@@ -343,6 +371,93 @@ const ITEMS: SeedItem[] = [
     unit: "l",
     minQuantity: 2,
     leadTimeDays: 2,
+  },
+];
+
+interface SeedPackage {
+  bandCode: string;
+  nameEn: string;
+  nameEs: string;
+  descriptionEn: string;
+  descriptionEs: string;
+  itemKeys: string[];
+}
+
+// 2 curated packages per band — the wizard's "recommended path" (step 5).
+// Sample data, clearly flagged via isSample; not a substitute for real
+// admin-curated packages (no admin UI for this yet, see PROGRESS.md).
+const PACKAGES: SeedPackage[] = [
+  {
+    bandCode: "BL_STD",
+    nameEn: "Everyday Lunch",
+    nameEs: "Almuerzo del Día",
+    descriptionEn: "A simple, reliable lunch for the whole office.",
+    descriptionEs: "Un almuerzo simple y confiable para toda la oficina.",
+    itemKeys: ["chicken", "arroz_rojo", "flan", "agua_fresca"],
+  },
+  {
+    bandCode: "BL_STD",
+    nameEn: "Taco Table Lunch",
+    nameEs: "Mesa de Tacos",
+    descriptionEn: "Enchiladas with beans and a sweet finish.",
+    descriptionEs: "Enchiladas con frijoles y un final dulce.",
+    itemKeys: ["chicken_enchiladas", "frijoles_charros", "brownie", "agua_fresca"],
+  },
+  {
+    bandCode: "BL_PLUS",
+    nameEn: "Executive Lunch",
+    nameEs: "Almuerzo Ejecutivo",
+    descriptionEn: "Grilled skirt steak with a fresh salad and dessert.",
+    descriptionEs: "Arrachera asada con ensalada fresca y postre.",
+    itemKeys: ["carne_asada", "caesar_salad", "tres_leches", "agua_fresca"],
+  },
+  {
+    bandCode: "BL_PLUS",
+    nameEn: "Fiesta Lunch Deluxe",
+    nameEs: "Almuerzo Fiesta Deluxe",
+    descriptionEn: "Enchiladas, tropical salad, guacamole, and flan.",
+    descriptionEs: "Enchiladas, ensalada tropical, guacamole y flan.",
+    itemKeys: ["chicken_enchiladas", "tropical_salad", "guacamole", "flan", "agua_fresca"],
+  },
+  {
+    bandCode: "CAT_STD",
+    nameEn: "Classic Buffet",
+    nameEs: "Buffet Clásico",
+    descriptionEn: "A full buffet spread with a crowd-pleasing main.",
+    descriptionEs: "Un buffet completo con un plato principal para todos.",
+    itemKeys: ["beef_empanadas", "chicken", "caesar_salad", "arroz_rojo", "tres_leches", "agua_fresca"],
+  },
+  {
+    bandCode: "CAT_STD",
+    nameEn: "Coastal Buffet",
+    nameEs: "Buffet Costero",
+    descriptionEn: "Veracruz-style fish with cactus salad and guacamole.",
+    descriptionEs: "Pescado a la veracruzana con ensalada de nopales y guacamole.",
+    itemKeys: ["veracruz_fish", "cactus_salad", "guacamole", "flan", "cafe_de_olla"],
+  },
+  {
+    bandCode: "CAT_PREM",
+    nameEn: "Premium Reception",
+    nameEs: "Recepción Premium",
+    descriptionEn: "Ceviche, salmon canapés, and a full charcuterie board.",
+    descriptionEs: "Ceviche, canapés de salmón y una tabla de charcutería completa.",
+    itemKeys: [
+      "shrimp_ceviche",
+      "salmon_canape",
+      "charcuterie_classic",
+      "carne_asada",
+      "caprese_canape",
+      "tres_leches",
+      "cafe_de_olla",
+    ],
+  },
+  {
+    bandCode: "CAT_PREM",
+    nameEn: "Elegant Fiesta",
+    nameEs: "Fiesta Elegante",
+    descriptionEn: "Ham croquettes, a Mediterranean board, and Veracruz-style fish.",
+    descriptionEs: "Croquetas de jamón, tabla mediterránea y pescado a la veracruzana.",
+    itemKeys: ["ham_croquettes", "charcuterie_mediterranean", "veracruz_fish", "tropical_salad", "flan", "cafe_de_olla"],
   },
 ];
 
@@ -372,18 +487,37 @@ async function main() {
   }
 
   console.log(`Seeding ${ITEMS.length} sample menu items...`);
+  const itemIdByKey: Record<string, string> = {};
   for (const item of ITEMS) {
-    const { bands, ...values } = item;
+    const { key, bands, ...values } = item;
     const [inserted] = await db
       .insert(menuItems)
       .values({ ...values, isSample: true })
       .returning({ id: menuItems.id });
+    itemIdByKey[key] = inserted.id;
 
     if (bands?.length) {
       await db
         .insert(bandMenuItems)
         .values(bands.map((bandCode) => ({ bandCode, menuItemId: inserted.id })));
     }
+  }
+
+  console.log(`Seeding ${PACKAGES.length} sample packages...`);
+  for (const pkg of PACKAGES) {
+    const { itemKeys, ...pkgValues } = pkg;
+    const [insertedPkg] = await db
+      .insert(packages)
+      .values({ ...pkgValues, isSample: true })
+      .returning({ id: packages.id });
+
+    await db.insert(packageItems).values(
+      itemKeys.map((itemKey) => {
+        const menuItemId = itemIdByKey[itemKey];
+        if (!menuItemId) throw new Error(`Unknown seed item key "${itemKey}" in package "${pkg.nameEn}"`);
+        return { packageId: insertedPkg.id, menuItemId };
+      }),
+    );
   }
 
   console.log("Seed complete.");

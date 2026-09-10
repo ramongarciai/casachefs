@@ -1,7 +1,13 @@
 import type { Band, BudgetMode, QuoteTotals, ServiceLine } from "./types";
 import { resolveBand } from "./resolveBand";
 import { calculateTotals } from "./totals";
-import { filterMenuItemsForQuote, type MenuItemForFiltering, type PublicMenuItem } from "./dto";
+import {
+  filterMenuItemsForQuote,
+  type MenuItemForFiltering,
+  type PublicMenuItem,
+  type RequiredDiet,
+  type SpiceLevel,
+} from "./dto";
 
 export interface BuildQuoteInput {
   serviceLine: ServiceLine;
@@ -9,6 +15,8 @@ export interface BuildQuoteInput {
   amountCents: number;
   guestCount: number;
   excludedAllergens?: string[];
+  requiredDiets?: RequiredDiet[];
+  maxSpiceLevel?: SpiceLevel;
 }
 
 export interface BuildQuoteDeps {
@@ -51,6 +59,8 @@ export function buildQuote(input: BuildQuoteInput, deps: BuildQuoteDeps): BuildQ
     items: deps.menuItems,
     eligibleItemIds,
     excludedAllergens: input.excludedAllergens,
+    requiredDiets: input.requiredDiets,
+    maxSpiceLevel: input.maxSpiceLevel,
     now: deps.now,
   });
 

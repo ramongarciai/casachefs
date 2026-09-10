@@ -71,19 +71,34 @@ export function toPublicMenuItem(item: MenuItemForFiltering): PublicMenuItem {
   };
 }
 
+export type RequiredDiet = "vegetarian" | "vegan" | "kosher" | "halal" | "porkFree" | "glutenFree" | "dairyFree" | "nutFree";
+
+const SPICE_ORDER = ["none", "mild", "medium", "hot"] as const;
+export type SpiceLevel = (typeof SPICE_ORDER)[number];
+
+function spiceRank(level: string): number {
+  const rank = SPICE_ORDER.indexOf(level as SpiceLevel);
+  return rank === -1 ? SPICE_ORDER.length : rank; // unknown values sort as "hottest", never silently pass a spice cap
+}
+
 export interface FilterMenuItemsParams {
   items: MenuItemForFiltering[];
   /** Menu item ids assigned to the resolved band (band_menu_items join). */
   eligibleItemIds: Set<string> | string[];
   /** Allergens the customer declared — items containing any are excluded. */
   excludedAllergens?: string[];
+  /** Diet restrictions the customer declared — only items satisfying all of these survive. */
+  requiredDiets?: RequiredDiet[];
+  /** "Low-spice" restriction: excludes items above this spice level. */
+  maxSpiceLevel?: SpiceLevel;
   now?: Date;
 }
 
 export function filterMenuItemsForQuote(params: FilterMenuItemsParams): PublicMenuItem[] {
   const eligible =
     params.eligibleItemIds instanceof Set ? params.eligibleItemIds : new Set(params.eligibleItemIds);
-  const excluded = new Set(params.excludedAllergens ?? []);
+  const excludedAllergens = new Set(params.excludedAllergens ?? []);
+  const requiredDiets = params.requiredDiets ?? [];
   const now = params.now ?? new Date();
 
   return params.items
@@ -91,6 +106,8 @@ export function filterMenuItemsForQuote(params: FilterMenuItemsParams): PublicMe
     .filter((item) => eligible.has(item.id))
     .filter((item) => !item.availableFrom || item.availableFrom <= now)
     .filter((item) => !item.availableTo || item.availableTo >= now)
-    .filter((item) => !item.allergens.some((allergen) => excluded.has(allergen)))
+    .filter((item) => !item.allergens.some((allergen) => excludedAllergens.has(allergen)))
+    .filter((item) => requiredDiets.every((diet) => item[diet]))
+    .filter((item) => !params.maxSpiceLevel || spiceRank(item.spiceLevel) <= spiceRank(params.maxSpiceLevel))
     .map(toPublicMenuItem);
 }

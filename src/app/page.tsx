@@ -6,9 +6,14 @@ export default function Home() {
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background px-6 text-center">
       <h1 className="text-4xl font-semibold tracking-tight">Casa Chefs</h1>
       <p className="max-w-md text-muted-foreground">
-        The ordering wizard is under construction. Check back soon.
+        Catering, box lunches, and made-to-order frozen food in Houston, The Woodlands, and Magnolia, TX.
       </p>
-      <Button render={<Link href="/login" />}>Staff &amp; admin sign in</Button>
+      <div className="flex gap-3">
+        <Button render={<Link href="/order" />}>Start an order</Button>
+        <Button variant="outline" render={<Link href="/login" />}>
+          Staff &amp; admin sign in
+        </Button>
+      </div>
     </div>
   );
 }
