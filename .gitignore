@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local embedded dev database
+/.pglite-data
+
+# local media uploads (dev fallback storage)
+/public/uploads
