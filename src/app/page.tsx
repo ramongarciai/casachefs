@@ -8,8 +8,11 @@ export default function Home() {
       <p className="max-w-md text-muted-foreground">
         Catering, box lunches, and made-to-order frozen food in Houston, The Woodlands, and Magnolia, TX.
       </p>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         <Button render={<Link href="/order" />}>Start an order</Button>
+        <Button variant="outline" render={<Link href="/account" />}>
+          My account
+        </Button>
         <Button variant="outline" render={<Link href="/login" />}>
           Staff &amp; admin sign in
         </Button>

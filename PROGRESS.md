@@ -89,7 +89,25 @@
 - No admin UI to curate packages — they're seed-data only, edit via Drizzle Studio or re-seed for now.
 - Emails are wired up but unverified against a real Resend account/domain.
 
-## Phase 5 — Accounts (reorder, saved addresses): not started
+## Phase 5 — Accounts (reorder, saved addresses) ✅ done
+
+- **`/account`** (`src/app/account/page.tsx`): requires sign-in (redirects to `/account/login` otherwise), shows de-duplicated saved addresses and full order history (status, date/time, guest count, grand total, item names, a **Reorder** button per order). Any signed-in user can view it — not role-gated to `customer` specifically.
+- **`/account/login`**: same Google + magic-link pattern as staff `/login`, but customer-branded copy and redirects to `/account`. Kept as a separate page from `/login` rather than generalizing one shared page — avoided touching the already-tested staff/admin login flow.
+- **Reorder** (`src/app/account/reorder.ts`, `reorder-button.tsx`): reconstructs a `WizardDraft` from a past order (`order_type`, restrictions, budget, selected items/package) and writes it straight to the wizard's `localStorage` key before navigating to `/order` — the wizard picks it up through the exact same hydration path a normal in-progress draft uses, no wizard-side special-casing needed. Per spec, only *what* to order carries over: the draft starts at **step 2** (skipping re-picking service type) with **date, time, guest count, and address all blank** — never silently reused.
+- **The "same address as last time, or a new address?" prompt** (step 2): any signed-in customer with saved addresses sees a radio choice — their most recent address (labeled), any other saved addresses, or "Enter a new address" — with **nothing selected by default** and Continue disabled until they choose. Selecting a saved address fills the (still-editable) fields; selecting new clears them.
+- **Contact pre-fill**: `/order/page.tsx` now fetches the session and, if signed in, the user's name/email/phone, passed to the wizard as `initialContact`. Applied whenever the draft's contact is still empty — covers both a fresh signed-in visit and a reorder draft (which never carries contact info) with one code path.
+- **Fixed a real Phase-4 gap while wiring this up**: `submitOrderAction` never persisted the customer's phone number on account creation, so "pre-fill phone" had nothing to read. Now sets it on a new user and backfills it for a returning customer whose profile predates it.
+- **Magic-link callback**: the post-submit sign-in email now sends the customer to `/account` (`callbackUrl: "/account"`) instead of the default admin-oriented destination.
+- **Verified with the same real-browser approach as phase 4** — placed an order anonymously, seeded a session for that customer, then drove `/account` and the full reorder flow through Puppeteer:
+  - Confirmed order history renders correctly (right items, status, total) and the saved address shows.
+  - **Found and fixed a real bug this way**: the first reorder attempt showed contact fields blank on step 6 — `buildDraftFromOrder()` writes a draft to `localStorage` before navigating, so the wizard's "only pre-fill contact if there's no saved draft" branch never ran for a reorder. Restructured the hydration effect to merge `initialContact` in whenever `draft.contact.email` is empty, regardless of where the rest of the draft came from. Re-verified: contact and budget both pre-fill correctly now.
+  - Ran a full reorder to submission with a different guest count (15 vs. the original 8) and confirmed the grand total recalculated correctly from scratch ($146.14, hand-verified) rather than reusing anything stale — and that both orders then appeared correctly in order history.
+  - Confirmed `/account` redirects an unauthenticated visitor to `/account/login` (307).
+
+### Deliberately out of scope here
+
+- No address edit/delete UI — addresses only ever get created as a side effect of submitting an order; `/account` just lists and de-dupes them for display.
+- No "order detail" page — history rows show a summary only, not the full BEO-style breakdown (that's more of an admin/phase-7 concern; a customer-facing detail view can be added later if wanted).
 
 ## Phase 6 — Admin review workspace: not started
 

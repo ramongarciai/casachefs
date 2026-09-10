@@ -246,9 +246,17 @@ export async function submitOrderAction(rawInput: unknown): Promise<SubmitOrderR
   if (!existingUser) {
     const [created] = await db
       .insert(users)
-      .values({ email: input.contact.email, name: input.contact.name, role: "customer" })
+      .values({
+        email: input.contact.email,
+        name: input.contact.name,
+        phone: input.contact.phone,
+        role: "customer",
+      })
       .returning({ id: users.id });
     userId = created.id;
+  } else if (!existingUser.phone) {
+    // Backfill phone for a returning customer whose profile predates it.
+    await db.update(users).set({ phone: input.contact.phone }).where(eq(users.id, existingUser.id));
   }
 
   const [address] = await db
@@ -329,7 +337,7 @@ export async function submitOrderAction(rawInput: unknown): Promise<SubmitOrderR
 
   // Best-effort — a failed email must never undo a successfully recorded order.
   await Promise.allSettled([
-    signIn("resend", { email: input.contact.email, redirect: false }),
+    signIn("resend", { email: input.contact.email, redirect: false, callbackUrl: "/account" }),
     sendOrderConfirmationEmail(emailSummary),
     sendAdminNotificationEmail(emailSummary),
   ]).then((results) => {

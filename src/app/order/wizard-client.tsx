@@ -20,7 +20,24 @@ export interface Minimums {
   deliveryRadiusMiles: number;
 }
 
-export function WizardClient({ minimums }: { minimums: Minimums }) {
+export interface SavedAddress {
+  id: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+export function WizardClient({
+  minimums,
+  savedAddresses = [],
+  initialContact,
+}: {
+  minimums: Minimums;
+  savedAddresses?: SavedAddress[];
+  initialContact?: WizardDraft["contact"];
+}) {
   const [draft, setDraft] = useState<WizardDraft>(EMPTY_DRAFT);
   const [hydrated, setHydrated] = useState(false);
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
@@ -29,14 +46,24 @@ export function WizardClient({ minimums }: { minimums: Minimums }) {
   // render time without a hydration mismatch — this effect intentionally
   // syncs from that external system once, after the initial (empty) render.
   useEffect(() => {
+    let restored = EMPTY_DRAFT;
     try {
       const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setDraft({ ...EMPTY_DRAFT, ...JSON.parse(saved) });
+      if (saved) restored = { ...EMPTY_DRAFT, ...JSON.parse(saved) };
     } catch {
       // corrupt/blocked storage — start fresh
     }
+    // Pre-fill contact for a signed-in customer whenever it isn't already
+    // set — covers both a brand-new draft and a reorder draft (which never
+    // carries contact info). Date/time/guest count/address are always
+    // re-asked regardless, so this only saves retyping name/email/phone.
+    if (initialContact && !restored.contact.email) {
+      restored = { ...restored, contact: initialContact };
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDraft(restored);
     setHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -103,7 +130,14 @@ export function WizardClient({ minimums }: { minimums: Minimums }) {
 
       {draft.step === 1 && <Step1ServiceType draft={draft} update={update} next={next} />}
       {draft.step === 2 && (
-        <Step2EventDetails draft={draft} update={update} next={next} back={back} minimums={minimumsForOrderType} />
+        <Step2EventDetails
+          draft={draft}
+          update={update}
+          next={next}
+          back={back}
+          minimums={minimumsForOrderType}
+          savedAddresses={savedAddresses}
+        />
       )}
       {draft.step === 3 && <Step3Restrictions draft={draft} update={update} next={next} back={back} />}
       {draft.step === 4 && <Step4Budget draft={draft} update={update} next={next} back={back} />}
