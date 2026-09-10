@@ -2,6 +2,7 @@ import { pgTable, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { users } from "./auth";
 import { menuItems } from "./menu";
 import { packages } from "./packages";
+import { addons, addonVariants } from "./addons";
 
 export const orderTypeEnum = pgEnum("order_type", [
   "event_catering",
@@ -82,6 +83,15 @@ export const orders = pgTable("orders", {
   taxCents: integer("tax_cents").notNull(),
   grandTotalCents: integer("grand_total_cents").notNull(),
 
+  // Admin review overrides (section 4.3). Null means "use the band / fee_rules
+  // default" — set only when the admin explicitly overrides it.
+  deliveryPctOverrideBps: integer("delivery_pct_override_bps"),
+  tipPctOverrideBps: integer("tip_pct_override_bps"),
+  taxRateOverrideBps: integer("tax_rate_override_bps"),
+  discountCents: integer("discount_cents").notNull().default(0),
+  surchargeCents: integer("surcharge_cents").notNull().default(0),
+  discountSurchargeReason: text("discount_surcharge_reason"),
+
   status: orderStatusEnum("status").notNull().default("submitted"),
   customerNotes: text("customer_notes"),
   internalNotes: text("internal_notes"),
@@ -101,6 +111,28 @@ export const orderItems = pgTable("order_items", {
     .notNull()
     .references(() => menuItems.id),
   quantity: integer("quantity").notNull(),
+});
+
+// Event add-ons the admin attaches during review (servers, linens, china,
+// etc.) — this is what actually changes the customer-facing total, unlike
+// swapping menu items (which only affects food cost / margin, since the
+// food price is fixed by the band once the order is placed).
+export const orderAddons = pgTable("order_addons", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  orderId: text("order_id")
+    .notNull()
+    .references(() => orders.id, { onDelete: "cascade" }),
+  addonId: text("addon_id")
+    .notNull()
+    .references(() => addons.id),
+  addonVariantId: text("addon_variant_id").references(() => addonVariants.id),
+  quantity: integer("quantity").notNull(),
+  // Snapshot of the catalog price when added — protects the order's history
+  // if the admin later edits the catalog price.
+  unitPriceCentsSnapshot: integer("unit_price_cents_snapshot").notNull(),
+  notes: text("notes"),
 });
 
 export const orderRestrictions = pgTable("order_restrictions", {

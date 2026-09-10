@@ -48,6 +48,10 @@ function getResendClient(): Resend | null {
   return new Resend(process.env.AUTH_RESEND_KEY);
 }
 
+function getSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
 export async function sendOrderConfirmationEmail(order: OrderEmailSummary) {
   const resend = getResendClient();
   if (!resend) {
@@ -67,6 +71,39 @@ export async function sendOrderConfirmationEmail(order: OrderEmailSummary) {
       `Event: ${order.eventDate} at ${order.eventTime}, ${order.guestCount} guests`,
       "",
       itemizedLines(order),
+      "",
+      "— Casa Chefs",
+    ].join("\n"),
+  });
+}
+
+export interface QuoteEmailSummary {
+  quoteId: string;
+  version: number;
+  customerName: string;
+  customerEmail: string;
+  grandTotalCents: number;
+}
+
+export async function sendQuoteEmail(quote: QuoteEmailSummary) {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn("sendQuoteEmail: no AUTH_RESEND_KEY configured, skipping");
+    return;
+  }
+
+  const link = `${getSiteUrl()}/quote/${quote.quoteId}`;
+
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM ?? "Casa Chefs <orders@casachefs.com>",
+    to: quote.customerEmail,
+    subject: `Your Casa Chefs quote (v${quote.version}) — ${centsToDollars(quote.grandTotalCents)}`,
+    text: [
+      `Hi ${quote.customerName},`,
+      "",
+      `Here's your revised quote, totaling ${centsToDollars(quote.grandTotalCents)}.`,
+      "",
+      `Review and respond: ${link}`,
       "",
       "— Casa Chefs",
     ].join("\n"),

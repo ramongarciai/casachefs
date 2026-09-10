@@ -109,7 +109,27 @@
 - No address edit/delete UI — addresses only ever get created as a side effect of submitting an order; `/account` just lists and de-dupes them for display.
 - No "order detail" page — history rows show a summary only, not the full BEO-style breakdown (that's more of an admin/phase-7 concern; a customer-facing detail view can be added later if wanted).
 
-## Phase 6 — Admin review workspace: not started
+## Phase 6 — Admin review workspace ✅ done
+
+- **Add-on catalog** (`/admin/addons`): full CRUD across the 6 spec categories (staff, furniture, linens, tableware, decor, beverages), each with a billing unit (per item/person/hour/person-hour/flat) and a dynamic variant list (color/style) so one record covers e.g. "napkins" in every color instead of 30 rows. Seeded with 26 sample add-ons. Same list/bulk-activate pattern as the menu manager, minus photos (not needed for logistics items).
+- **Order pipeline** (`/admin/orders`): list with status, allergy/diet badge, and grand total; links into...
+- **Order review workspace** (`/admin/orders/[id]`), split screen exactly per spec 4.3:
+  - **Left (read-only)**: the customer's submitted request — contact, event details, address, original budget, quote-version history.
+  - **Right (editable)**: items (add/remove/adjust quantity from the *full* catalog, not just the band-eligible set — admin has full control), event add-ons (catalog picker with variant selection), delivery/gratuity/tax **percentage overrides** (blank = band/fee_rules default), a discount or surcharge that **requires a reason** (enforced server-side, not just in the UI), internal notes (admin-only) vs. customer-facing notes, and a live **margin panel** (food cost vs. price, gross margin $ and %, admin-only).
+  - **Allergy banner** pinned at the top whenever the order has any restrictions.
+  - **Mode B overage warning**: uses phase 3's `computeBudgetOverageCents()` — if the order was a fixed-total budget and add-ons/overrides push the grand total past it, a persistent red banner says so.
+- **The core pricing rule enforced correctly**: swapping menu items or changing quantities affects the **margin panel only** — the customer's food price is fixed once the wizard resolves a band, so only add-ons, fee overrides, and discount/surcharge can move the customer-facing total. This is the single most important thing to get right in this phase, and it's what `calculateAdminTotals()` (new, in `lib/pricing/`, 4 new tests) actually encodes.
+- **`quotes` table (versioning)**: every "Send revised quote" click snapshots the order's current totals as an immutable, incrementing-version row and flips `orders.status` to `quote_sent`. Item/add-on *lists* are read live from the order at render time rather than also snapshotted — a scoped simplification (see below).
+- **`/quote/[id]`**: minimal read-only stub so the emailed link actually goes somewhere real — shows the itemized quote, no Approve/Decline yet. The full customer approval flow, PDF, and locking-on-approval are phase 7 (spec 4.4).
+- Every mutation (items, add-ons, overrides) immediately recomputes and persists `orders`' totals via a shared `recomputeAndSaveOrderTotals()` helper, so the order row always reflects live current state — "Send revised quote" just snapshots whatever's already there.
+- **Verified with the same real-browser approach**: placed a $35/person, 40-guest event-catering order (resolved to `CAT_PREM`), then as a seeded admin session drove the full review workspace — added 50 server-hours as an add-on, overrode delivery to 5%, applied a $50 discount with a reason, saved, sent a revised quote, and hand-verified every resulting number against the DB (margin: $960 food cost / $440 gross margin / 31.4% off a $1400 food subtotal for 7 items × 40 guests; final quote: $2175.93, matching the formula to the cent). Confirmed `/quote/[id]` renders the same numbers with zero band-code or internal-cost leakage (grepped for it).
+- One real bug hit during testing: a `page.locator(...).click()` intermittently missed the "Send revised quote" button (Puppeteer-specific auto-wait flakiness against this Base UI button, not an app bug) — confirmed by clicking it via direct DOM dispatch instead, which worked immediately and consistently on retry.
+
+### Deliberately scoped down
+
+- Quotes snapshot **financial totals only**, not the item/add-on list — if the admin edits items after sending a quote but before the customer responds, the quote's displayed items would reflect the latest state, not the exact historical snapshot. Full immutability (needed for "approved quotes lock") is phase 7 scope.
+- No delete for add-ons (mirrors the menu manager's active/inactive-only precedent from phase 2).
+- `/quote/[id]` has no Approve/Request changes/Decline actions, no signature capture, no PDF — all phase 7.
 
 ## Phase 7 — Approval + documents: not started
 

@@ -5,11 +5,15 @@ import { menuItems } from "./schema/menu";
 import { pricingBands, bandMenuItems } from "./schema/pricing";
 import { feeRules } from "./schema/fee-rules";
 import { packages, packageItems } from "./schema/packages";
+import { addons, addonVariants } from "./schema/addons";
 import { PRICING_BANDS_SEED_DATA as BANDS } from "./pricing-bands-data";
 import type { menuCategoryEnum, allergenEnum } from "./schema/menu";
+import type { addonCategoryEnum, addonUnitEnum } from "./schema/addons";
 
 type Allergen = (typeof allergenEnum.enumValues)[number];
 type Category = (typeof menuCategoryEnum.enumValues)[number];
+type AddonCategory = (typeof addonCategoryEnum.enumValues)[number];
+type AddonUnit = (typeof addonUnitEnum.enumValues)[number];
 
 interface SeedItem {
   /** Stable lookup key used to reference this item from PACKAGES below. */
@@ -461,6 +465,67 @@ const PACKAGES: SeedPackage[] = [
   },
 ];
 
+interface SeedAddon {
+  category: AddonCategory;
+  nameEn: string;
+  nameEs: string;
+  unit: AddonUnit;
+  unitPriceCents: number;
+  variants?: { nameEn: string; nameEs: string }[];
+}
+
+const COLOR_VARIANTS = [
+  { nameEn: "White", nameEs: "Blanco" },
+  { nameEn: "Ivory", nameEs: "Marfil" },
+  { nameEn: "Burgundy", nameEs: "Vino" },
+  { nameEn: "Black", nameEs: "Negro" },
+];
+
+// Admin-managed event add-on catalog (section 4.2). Sample data.
+const ADDONS: SeedAddon[] = [
+  // Staff
+  { category: "staff", nameEn: "Servers / Meseros", nameEs: "Meseros", unit: "per_person_per_hour", unitPriceCents: 800 },
+  { category: "staff", nameEn: "Bartender", nameEs: "Bartender", unit: "per_hour", unitPriceCents: 3500 },
+  { category: "staff", nameEn: "Chef on Site", nameEs: "Chef en Sitio", unit: "per_hour", unitPriceCents: 6000 },
+  { category: "staff", nameEn: "Setup Crew", nameEs: "Equipo de Montaje", unit: "per_person_per_hour", unitPriceCents: 1000 },
+
+  // Furniture
+  { category: "furniture", nameEn: "Round Table (seats 8)", nameEs: "Mesa Redonda (8 personas)", unit: "per_item", unitPriceCents: 1500 },
+  { category: "furniture", nameEn: "Rectangular Table", nameEs: "Mesa Rectangular", unit: "per_item", unitPriceCents: 1200 },
+  { category: "furniture", nameEn: "Chair", nameEs: "Silla", unit: "per_item", unitPriceCents: 300 },
+  { category: "furniture", nameEn: "Chair Cover", nameEs: "Funda de Silla", unit: "per_item", unitPriceCents: 250, variants: COLOR_VARIANTS },
+  { category: "furniture", nameEn: "Sash", nameEs: "Faja", unit: "per_item", unitPriceCents: 150, variants: COLOR_VARIANTS },
+
+  // Linens
+  { category: "linens", nameEn: "Tablecloth", nameEs: "Mantel", unit: "per_item", unitPriceCents: 800, variants: COLOR_VARIANTS },
+  { category: "linens", nameEn: "Napkins", nameEs: "Servilletas", unit: "per_item", unitPriceCents: 400, variants: COLOR_VARIANTS },
+
+  // Tableware
+  { category: "tableware", nameEn: "China Place Setting", nameEs: "Vajilla de Porcelana", unit: "per_person", unitPriceCents: 400 },
+  { category: "tableware", nameEn: "Charger / Bajo Plato", nameEs: "Bajo Plato", unit: "per_item", unitPriceCents: 200, variants: [
+    { nameEn: "Gold", nameEs: "Dorado" },
+    { nameEn: "Silver", nameEs: "Plateado" },
+    { nameEn: "Clear", nameEs: "Transparente" },
+  ] },
+  { category: "tableware", nameEn: "Specialty Plate", nameEs: "Plato Especial", unit: "per_item", unitPriceCents: 300 },
+  { category: "tableware", nameEn: "Flatware Set", nameEs: "Set de Cubiertos", unit: "per_person", unitPriceCents: 250 },
+  { category: "tableware", nameEn: "Glassware", nameEs: "Cristalería", unit: "per_person", unitPriceCents: 150 },
+  { category: "tableware", nameEn: "Wine Glass", nameEs: "Copa de Vino", unit: "per_item", unitPriceCents: 100 },
+  { category: "tableware", nameEn: "Tumbler", nameEs: "Vaso", unit: "per_item", unitPriceCents: 75 },
+
+  // Decor
+  { category: "decor", nameEn: "Centerpiece", nameEs: "Centro de Mesa", unit: "per_item", unitPriceCents: 2500 },
+  { category: "decor", nameEn: "Uplighting", nameEs: "Iluminación", unit: "per_item", unitPriceCents: 2000 },
+  { category: "decor", nameEn: "Signage", nameEs: "Señalización", unit: "flat", unitPriceCents: 5000 },
+
+  // Beverages
+  { category: "beverages", nameEn: "Wine Service", nameEs: "Servicio de Vino", unit: "per_person", unitPriceCents: 1200 },
+  { category: "beverages", nameEn: "Beer Service", nameEs: "Servicio de Cerveza", unit: "per_person", unitPriceCents: 800 },
+  { category: "beverages", nameEn: "Soda Service", nameEs: "Servicio de Refrescos", unit: "per_person", unitPriceCents: 250 },
+  { category: "beverages", nameEn: "Water Service", nameEs: "Servicio de Agua", unit: "per_person", unitPriceCents: 150 },
+  { category: "beverages", nameEn: "Coffee Service", nameEs: "Servicio de Café", unit: "per_person", unitPriceCents: 300 },
+];
+
 const DEFAULT_FEE_RULES = {
   id: "default",
   taxRateBps: 825, // 8.25% — Houston-area combined TX sales tax rate
@@ -518,6 +583,19 @@ async function main() {
         return { packageId: insertedPkg.id, menuItemId };
       }),
     );
+  }
+
+  console.log(`Seeding ${ADDONS.length} sample add-ons...`);
+  for (const addon of ADDONS) {
+    const { variants, ...addonValues } = addon;
+    const [inserted] = await db
+      .insert(addons)
+      .values({ ...addonValues, isSample: true })
+      .returning({ id: addons.id });
+
+    if (variants?.length) {
+      await db.insert(addonVariants).values(variants.map((v) => ({ addonId: inserted.id, ...v })));
+    }
   }
 
   console.log("Seed complete.");
