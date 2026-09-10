@@ -34,7 +34,7 @@ export function GapScreen({ back }: { back: () => void }) {
     return (
       <Card className="max-w-md">
         <CardHeader>
-          <CardTitle>Thanks — we&apos;ll be in touch</CardTitle>
+          <CardTitle className="font-heading">Thanks — we&apos;ll be in touch</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
           Someone from our team will reach out shortly to talk through the details.
@@ -46,7 +46,7 @@ export function GapScreen({ back }: { back: () => void }) {
   return (
     <Card className="max-w-md">
       <CardHeader>
-        <CardTitle>Let&apos;s talk</CardTitle>
+        <CardTitle className="font-heading">Let&apos;s talk</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="mb-4 text-sm text-muted-foreground">

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
@@ -22,6 +23,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default async function QuotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -36,7 +41,7 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
       <Card className="w-full">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Quote v{quote.version}</CardTitle>
+            <CardTitle className="font-heading">Quote v{quote.version}</CardTitle>
             <Badge variant={quote.status === "approved" ? "default" : "secondary"}>
               {STATUS_LABELS[quote.status] ?? quote.status}
             </Badge>

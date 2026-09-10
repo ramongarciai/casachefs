@@ -138,6 +138,78 @@ export async function sendAdminQuoteResponseNotification(params: {
   });
 }
 
+export interface FrozenOrderEmailSummary {
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  pickupDate: string;
+  pickupTime: string;
+  items: { nameEn: string; unit: string; quantity: number; unitPriceCents: number }[];
+  foodSubtotalCents: number;
+  taxCents: number;
+  grandTotalCents: number;
+}
+
+function frozenItemizedLines(order: FrozenOrderEmailSummary): string {
+  const lines = order.items.map(
+    (i) => `${i.nameEn}: ${i.quantity} ${i.unit} × ${centsToDollars(i.unitPriceCents)} = ${centsToDollars(i.quantity * i.unitPriceCents)}`,
+  );
+  lines.push(
+    "",
+    `Subtotal: ${centsToDollars(order.foodSubtotalCents)}`,
+    `Tax: ${centsToDollars(order.taxCents)}`,
+    `Total: ${centsToDollars(order.grandTotalCents)}`,
+  );
+  return lines.join("\n");
+}
+
+export async function sendFrozenOrderConfirmationEmail(order: FrozenOrderEmailSummary) {
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn("sendFrozenOrderConfirmationEmail: no AUTH_RESEND_KEY configured, skipping");
+    return;
+  }
+
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM ?? "Casa Chefs <orders@casachefs.com>",
+    to: order.customerEmail,
+    subject: "We received your frozen food order — Casa Chefs",
+    text: [
+      `Hi ${order.customerName},`,
+      "",
+      "Thanks for your order. This is a preliminary request, not confirmed — our team will follow up to confirm your pickup.",
+      "",
+      `Pickup: ${order.pickupDate} at ${order.pickupTime}`,
+      "",
+      frozenItemizedLines(order),
+      "",
+      "— Casa Chefs",
+    ].join("\n"),
+  });
+}
+
+export async function sendFrozenOrderAdminNotification(order: FrozenOrderEmailSummary) {
+  const resend = getResendClient();
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!resend || !adminEmail) {
+    console.warn("sendFrozenOrderAdminNotification: missing AUTH_RESEND_KEY or ADMIN_NOTIFICATION_EMAIL, skipping");
+    return;
+  }
+
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM ?? "Casa Chefs <orders@casachefs.com>",
+    to: adminEmail,
+    subject: `New frozen food order — ${order.customerName} (${order.pickupDate})`,
+    text: [
+      `New frozen food order #${order.orderId}`,
+      `${order.customerName} <${order.customerEmail}>`,
+      `Pickup: ${order.pickupDate} at ${order.pickupTime}`,
+      "",
+      frozenItemizedLines(order),
+    ].join("\n"),
+  });
+}
+
 export async function sendAdminNotificationEmail(order: OrderEmailSummary) {
   const resend = getResendClient();
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;

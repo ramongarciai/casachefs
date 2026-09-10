@@ -174,6 +174,12 @@ export async function updateOrderNotes(
   revalidateOrder(orderId);
 }
 
+export async function updateOrderStatus(orderId: string, status: (typeof orders.$inferSelect)["status"]) {
+  await requireStaff();
+  await db.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, orderId));
+  revalidateOrder(orderId);
+}
+
 export async function sendRevisedQuote(orderId: string) {
   await requireStaff();
 

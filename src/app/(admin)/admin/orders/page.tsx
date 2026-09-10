@@ -65,7 +65,7 @@ export default async function AdminOrdersPage() {
               <TableCell>
                 {order.eventDate} {order.eventTime}
               </TableCell>
-              <TableCell>{order.guestCount}</TableCell>
+              <TableCell>{order.orderType === "frozen_food" ? "—" : order.guestCount}</TableCell>
               <TableCell>${(order.grandTotalCents / 100).toFixed(2)}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">

@@ -14,7 +14,7 @@ export default function AccountLoginPage() {
     <div className="flex flex-1 items-center justify-center px-6 py-16">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
+          <CardTitle className="font-heading">Sign in</CardTitle>
           <CardDescription>See your order history and reorder in a click.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

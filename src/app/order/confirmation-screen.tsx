@@ -6,7 +6,7 @@ export function ConfirmationScreen({ orderId }: { orderId: string }) {
   return (
     <Card className="max-w-md">
       <CardHeader>
-        <CardTitle>Request received</CardTitle>
+        <CardTitle className="font-heading">Request received</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
         <p>
@@ -15,7 +15,7 @@ export function ConfirmationScreen({ orderId }: { orderId: string }) {
         </p>
         <p>We&apos;ve also emailed you a sign-in link so you can check back on this request any time.</p>
         <p className="text-xs">Reference: {orderId}</p>
-        <Button size="sm" render={<Link href="/account" />} className="self-start">
+        <Button nativeButton={false} size="sm" render={<Link href="/account" />} className="self-start">
           View my orders
         </Button>
       </CardContent>

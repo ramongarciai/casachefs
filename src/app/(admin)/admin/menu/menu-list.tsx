@@ -111,7 +111,9 @@ export function MenuList({ items, bands }: { items: Row[]; bands: Band[] }) {
             </SelectContent>
           </Select>
         </div>
-        <Button render={<Link href="/admin/menu/new" />}>New item</Button>
+        <Button nativeButton={false} render={<Link href="/admin/menu/new" />}>
+          New item
+        </Button>
       </div>
 
       {selected.size > 0 && (

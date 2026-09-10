@@ -100,7 +100,7 @@ export function Step2EventDetails({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Event details</h1>
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">Event details</h1>
         <p className="text-muted-foreground">
           Minimum {minimums.minGuests} guests, {minimums.minLeadDays} days&apos; notice. We deliver within about{" "}
           {minimums.deliveryRadiusMiles} miles of Magnolia / The Woodlands.

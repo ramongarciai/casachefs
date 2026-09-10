@@ -104,7 +104,7 @@ export function Step5Options({
   return (
     <div className="flex flex-col gap-6 pb-24">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Choose your menu</h1>
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">Choose your menu</h1>
         <p className="text-muted-foreground">Pick a package, then swap anything you&apos;d like to change.</p>
       </div>
 

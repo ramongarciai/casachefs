@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
@@ -13,6 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard" },

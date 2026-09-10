@@ -70,7 +70,9 @@ export function AddonList({ addons }: { addons: Row[] }) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div />
-        <Button render={<Link href="/admin/addons/new" />}>New add-on</Button>
+        <Button nativeButton={false} render={<Link href="/admin/addons/new" />}>
+          New add-on
+        </Button>
       </div>
 
       {selected.size > 0 && (

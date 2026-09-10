@@ -1,22 +1,42 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { eq } from "drizzle-orm";
+import { auth } from "@/auth";
+import { db } from "@/db";
+import { users } from "@/db/schema/auth";
+import { feeRules } from "@/db/schema/fee-rules";
+import { FrozenClient } from "./frozen-client";
 
-export default function FrozenFoodPage() {
+export const dynamic = "force-dynamic";
+
+export default async function FrozenFoodPage() {
+  const [items, session, feeRuleRow] = await Promise.all([
+    db.query.menuItems.findMany({
+      where: (m, { and, eq: eqOp }) => and(eqOp(m.category, "frozen"), eqOp(m.active, true)),
+      orderBy: (m, { asc }) => [asc(m.nameEn)],
+    }),
+    auth(),
+    db.query.feeRules.findFirst({ where: eq(feeRules.id, "default") }),
+  ]);
+
+  let initialContact: { name: string; email: string; phone: string } | undefined;
+  if (session?.user) {
+    const userRow = await db.query.users.findFirst({ where: eq(users.id, session.user.id) });
+    initialContact = { name: userRow?.name ?? "", email: userRow?.email ?? "", phone: userRow?.phone ?? "" };
+  }
+
   return (
-    <div className="mx-auto flex max-w-md flex-1 items-center justify-center px-6 py-16">
-      <Card>
-        <CardHeader>
-          <CardTitle>Frozen food, coming soon</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 text-sm text-muted-foreground">
-          <p>
-            Our made-to-order frozen food catalog is on its way. In the meantime, give us a call and we&apos;ll get
-            you taken care of.
-          </p>
-          <Button render={<Link href="/order" />}>Back to start</Button>
-        </CardContent>
-      </Card>
-    </div>
+    <FrozenClient
+      products={items.map((i) => ({
+        id: i.id,
+        nameEn: i.nameEn,
+        nameEs: i.nameEs,
+        descriptionEn: i.descriptionEn,
+        publishedPriceCents: i.publishedPriceCents ?? 0,
+        unit: i.unit ?? "lb",
+        minQuantity: i.minQuantity,
+        leadTimeDays: i.leadTimeDays,
+      }))}
+      initialContact={initialContact}
+      taxRateBps={feeRuleRow?.taxRateBps ?? 0}
+    />
   );
 }

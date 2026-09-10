@@ -108,7 +108,7 @@ export function Step3Restrictions({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Allergies &amp; restrictions</h1>
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">Allergies &amp; restrictions</h1>
         <p className="text-muted-foreground">This tells us what to leave out and drives our kitchen sheet.</p>
       </div>
 

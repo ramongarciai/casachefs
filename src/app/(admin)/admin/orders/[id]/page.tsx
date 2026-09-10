@@ -8,6 +8,7 @@ import { feeRules } from "@/db/schema/fee-rules";
 import { addons, addonVariants } from "@/db/schema/addons";
 import { quotes } from "@/db/schema/quotes";
 import { OrderReviewWorkspace } from "./workspace";
+import { FrozenOrderReview } from "./frozen-order-review";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,35 @@ export default async function OrderReviewPage({ params }: { params: Promise<{ id
 
   const order = await db.query.orders.findFirst({ where: eq(orders.id, id) });
   if (!order) notFound();
+
+  // Frozen food orders have no band, no per-person pricing, and no
+  // quote-negotiation workflow — published prices are charged directly.
+  // Route them to a much simpler review view instead of forcing the
+  // band-centric workspace to handle a null band everywhere.
+  if (order.orderType === "frozen_food") {
+    const itemRows = await db.select().from(orderItems).where(eq(orderItems.orderId, id));
+    const menuItemIds = itemRows.map((i) => i.menuItemId);
+    const menuItemRows = menuItemIds.length
+      ? await db.query.menuItems.findMany({ where: (m, { inArray }) => inArray(m.id, menuItemIds) })
+      : [];
+    const menuItemById = new Map(menuItemRows.map((m) => [m.id, m]));
+
+    return (
+      <FrozenOrderReview
+        order={order}
+        items={itemRows.map((i) => {
+          const menuItem = menuItemById.get(i.menuItemId);
+          return {
+            id: i.id,
+            nameEn: menuItem?.nameEn ?? "(deleted item)",
+            quantity: i.quantity,
+            unit: menuItem?.unit ?? "lb",
+            unitPriceCents: menuItem?.publishedPriceCents ?? 0,
+          };
+        })}
+      />
+    );
+  }
 
   const [
     address,

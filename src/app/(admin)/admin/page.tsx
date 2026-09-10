@@ -71,7 +71,8 @@ export default async function AdminDashboardPage() {
               <div>
                 <div className="font-medium">{o.customerName}</div>
                 <div className="text-xs text-muted-foreground">
-                  {o.eventDate} at {o.eventTime} · {o.guestCount} guests
+                  {o.eventDate} at {o.eventTime}
+                  {o.orderType !== "frozen_food" && ` · ${o.guestCount} guests`}
                 </div>
               </div>
               <Badge variant="secondary" className="capitalize">

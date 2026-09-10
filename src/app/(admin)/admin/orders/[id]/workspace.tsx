@@ -10,6 +10,7 @@ import { calculateMargin, computeBudgetOverageCents } from "@/lib/pricing";
 import { ItemsEditor } from "./items-editor";
 import { AddonsEditor } from "./addons-editor";
 import { QuoteControls } from "./quote-controls";
+import { OrderStatusSelect } from "./order-status-select";
 
 export interface Item {
   id: string;
@@ -170,9 +171,7 @@ export function OrderReviewWorkspace({
           >
             Download BEO / Kitchen Sheet
           </a>
-          <Badge variant="secondary" className="capitalize">
-            {order.status.replace("_", " ")}
-          </Badge>
+          <OrderStatusSelect orderId={order.id} status={order.status} />
         </div>
       </div>
 
