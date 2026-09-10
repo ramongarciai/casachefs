@@ -44,3 +44,28 @@ export const quotes = pgTable(
   },
   (t) => [unique().on(t.orderId, t.version)],
 );
+
+export const quoteApprovalActionEnum = pgEnum("quote_approval_action", [
+  "approved",
+  "changes_requested",
+  "declined",
+]);
+
+/**
+ * One row per customer response to a quote (section 4.4). Approving
+ * requires a typed full name as signature; timestamp and IP are captured
+ * automatically. Never editable after the fact.
+ */
+export const quoteApprovals = pgTable("quote_approvals", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  quoteId: text("quote_id")
+    .notNull()
+    .references(() => quotes.id, { onDelete: "cascade" }),
+  action: quoteApprovalActionEnum("action").notNull(),
+  signatureName: text("signature_name"),
+  note: text("note"),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});

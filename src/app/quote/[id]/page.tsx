@@ -1,18 +1,25 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { quotes } from "@/db/schema/quotes";
 import { orders } from "@/db/schema/orders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { QuoteActions } from "./quote-actions";
 
 function centsToDollars(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-// Read-only for now — Approve / Request changes / Decline and the signature
-// capture are phase 7 (spec section 4.4). This just proves the "Send
-// revised quote" link actually goes somewhere real.
+const STATUS_LABELS: Record<string, string> = {
+  sent: "Awaiting your response",
+  approved: "Approved",
+  changes_requested: "Changes requested",
+  declined: "Declined",
+};
+
 export const dynamic = "force-dynamic";
 
 export default async function QuotePage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,7 +35,12 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
     <div className="mx-auto flex max-w-lg flex-1 items-center justify-center px-6 py-16">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Quote v{quote.version}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Quote v{quote.version}</CardTitle>
+            <Badge variant={quote.status === "approved" ? "default" : "secondary"}>
+              {STATUS_LABELS[quote.status] ?? quote.status}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm">
           <p className="text-muted-foreground">
@@ -73,13 +85,19 @@ export default async function QuotePage({ params }: { params: Promise<{ id: stri
             <span>Grand total</span>
             <span>{centsToDollars(quote.grandTotalCents)}</span>
           </div>
-          {quote.customerNotes && (
-            <p className="mt-2 rounded bg-muted p-2 text-xs">{quote.customerNotes}</p>
+          {quote.customerNotes && <p className="mt-2 rounded bg-muted p-2 text-xs">{quote.customerNotes}</p>}
+
+          <Link href={`/api/quotes/${quote.id}/pdf`} target="_blank" className="text-xs text-primary hover:underline">
+            Download PDF
+          </Link>
+
+          {quote.status === "sent" ? (
+            <QuoteActions quoteId={quote.id} />
+          ) : (
+            <p className="mt-2 text-xs text-muted-foreground">
+              This quote has already been responded to. Contact us if you need to make further changes.
+            </p>
           )}
-          <p className="mt-4 rounded bg-muted p-2 text-xs text-muted-foreground">
-            Approving or requesting changes online is coming soon — reply to your quote email or call us in the
-            meantime.
-          </p>
         </CardContent>
       </Card>
     </div>

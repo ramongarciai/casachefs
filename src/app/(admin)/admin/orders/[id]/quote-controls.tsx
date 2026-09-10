@@ -33,6 +33,8 @@ interface FormValues {
   reason: string;
   internalNotes: string;
   customerNotes: string;
+  deliveryWindow: string;
+  driverNotes: string;
 }
 
 export function QuoteControls({
@@ -61,6 +63,8 @@ export function QuoteControls({
       reason: order.discountSurchargeReason ?? "",
       internalNotes: order.internalNotes ?? "",
       customerNotes: order.customerNotes ?? "",
+      deliveryWindow: order.deliveryWindow ?? "",
+      driverNotes: order.driverNotes ?? "",
     },
   });
 
@@ -82,7 +86,12 @@ export function QuoteControls({
       surchargeCents,
       discountSurchargeReason: v.reason.trim() || null,
     });
-    await updateOrderNotes(order.id, { internalNotes: v.internalNotes, customerNotes: v.customerNotes });
+    await updateOrderNotes(order.id, {
+      internalNotes: v.internalNotes,
+      customerNotes: v.customerNotes,
+      deliveryWindow: v.deliveryWindow,
+      driverNotes: v.driverNotes,
+    });
   }
 
   function handleSave() {
@@ -154,6 +163,17 @@ export function QuoteControls({
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="customerNotes">Customer-facing notes</Label>
           <Textarea id="customerNotes" rows={2} {...register("customerNotes")} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="deliveryWindow">Delivery window (BEO)</Label>
+            <Input id="deliveryWindow" placeholder="e.g. 11:30 AM – 12:00 PM" {...register("deliveryWindow")} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="driverNotes">Driver notes (BEO)</Label>
+            <Input id="driverNotes" placeholder="e.g. Use loading dock B" {...register("driverNotes")} />
+          </div>
         </div>
 
         <Separator />

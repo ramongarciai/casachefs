@@ -131,6 +131,25 @@
 - No delete for add-ons (mirrors the menu manager's active/inactive-only precedent from phase 2).
 - `/quote/[id]` has no Approve/Request changes/Decline actions, no signature capture, no PDF — all phase 7.
 
-## Phase 7 — Approval + documents: not started
+## Phase 7 — Approval + documents ✅ done
+
+- **`/quote/[id]` is now fully interactive** (spec 4.4): Approve (types full name as signature, timestamp + IP captured automatically), Request changes (feedback note), or Decline — each writes an immutable `quote_approvals` row and notifies the admin by email for changes/decline. Approving flips `orders.status` to `approved` and records `approvedQuoteId`; declining flips it to `cancelled`.
+- **New `quote_approvals` table** — one row per customer response, never edited after the fact.
+- **Re-approval enforcement, the trickiest part of this phase**: any admin edit after approval — items, add-ons, *or* fee overrides — reverts the order to `in_review`, so the next "Send revised quote" creates v2 and requires fresh approval. Initially only wired this into the add-on/override recompute path; **testing caught that item edits didn't trigger it** (adding a menu item to an approved order left it silently `approved`). Fixed with a shared `revertApprovalIfNeeded()` helper called from `replaceOrderItems` too. Verified end-to-end: v1 stays immutably `approved` in its own row while v2 is created fresh — a real bug that only real interaction testing would have caught, since unit tests wouldn't have covered the item-vs-addon code path split.
+- **PDF generation** (`@react-pdf/renderer`, added to `serverExternalPackages` proactively given phases 2/3's pglite/sharp precedent — didn't need to debug it this time):
+  - `GET /api/quotes/[id]/pdf` — the approved/pending quote, itemized, with signature info once approved. No auth required (same unguessable-UUID model as the `/quote/[id]` page itself).
+  - `GET /api/admin/orders/[id]/beo` — the BEO/kitchen sheet: allergy alerts in a red box at the top, item/packing-list counts, delivery window + driver notes (two new admin-editable order fields), contact phone. Admin-only.
+  - Verified both actually produce valid PDF files (checked with `file`), not just that the route returns 200.
+- **Found and fixed a real auth bug while testing**: both admin-only PDF/CSV route handlers returned a bare framework 500 for an unauthenticated request instead of 401, because `requireStaff()`'s thrown error was never caught inside a Route Handler (unlike server actions, where Next.js handles that automatically). Wrapped both in try/catch; verified 401 unauthenticated / 200 authenticated.
+- **Calendar** (`/admin/calendar`): a real month grid (not just a list), prev/next navigation via `?month=YYYY-MM`, orders plotted on their event date linking into the review workspace.
+- **Dashboard** (`/admin`): pipeline counts per status (all 9 statuses shown, including zero-count ones) plus an upcoming-events list, both backed by real queries now instead of the phase-1 placeholder.
+- **CSV export** (`/api/admin/orders/export`): one row per order, admin-only.
+- Verified the whole approval lifecycle with the same real-browser approach as phases 4-6: placed an order, sent v1, approved it as the customer (signature + IP recorded correctly), edited it as admin (confirmed the re-approval bug above), sent v2, and confirmed both quote PDF and BEO PDF render correctly with the right numbers.
+
+### Deliberately scoped down
+
+- No BEO customization UI beyond delivery window / driver notes — dietary variant *counts* on the BEO are the raw restriction rows (allergen/diet/spice + affected guest count), not a further-aggregated summary; sufficient for a kitchen sheet, more polish possible later.
+- Calendar has no drag-to-reschedule or multi-event-per-day layout refinement — a day cell just lists events, which is fine at this order volume.
+- No customer-facing view of quote version history (v1 vs v2) — each emailed link points at one specific version; the admin workspace's quote-history card is the only place all versions are browsable.
 
 ## Phase 8 — Frozen food module, polish, SEO, analytics: not started

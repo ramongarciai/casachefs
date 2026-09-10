@@ -79,6 +79,8 @@ export interface OrderForWorkspace {
   status: string;
   customerNotes: string | null;
   internalNotes: string | null;
+  deliveryWindow: string | null;
+  driverNotes: string | null;
   deliveryPctOverrideBps: number | null;
   tipPctOverrideBps: number | null;
   taxRateOverrideBps: number | null;
@@ -159,9 +161,19 @@ export function OrderReviewWorkspace({
           <h1 className="text-2xl font-semibold tracking-tight">{order.customerName}</h1>
           <p className="text-sm text-muted-foreground">{order.customerEmail}</p>
         </div>
-        <Badge variant="secondary" className="capitalize">
-          {order.status.replace("_", " ")}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/api/admin/orders/${order.id}/beo`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-primary hover:underline"
+          >
+            Download BEO / Kitchen Sheet
+          </a>
+          <Badge variant="secondary" className="capitalize">
+            {order.status.replace("_", " ")}
+          </Badge>
+        </div>
       </div>
 
       {restrictions.length > 0 && (
@@ -255,7 +267,9 @@ export function OrderReviewWorkspace({
               <CardContent className="flex flex-col gap-2 text-sm">
                 {quoteHistory.map((q) => (
                   <div key={q.id} className="flex items-center justify-between">
-                    <span>v{q.version}</span>
+                    <a href={`/quote/${q.id}`} target="_blank" rel="noreferrer" className="hover:underline">
+                      v{q.version}
+                    </a>
                     <span className="text-muted-foreground">{centsToDollars(q.grandTotalCents)}</span>
                     <Badge variant="outline" className="capitalize">
                       {q.status.replace("_", " ")}

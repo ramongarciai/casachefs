@@ -18,6 +18,18 @@ function revalidateOrder(id: string) {
 }
 
 /**
+ * Per spec: any edit after approval — items, add-ons, or fee overrides —
+ * requires a new version and re-approval, since the customer's signature
+ * covered a specific configuration and price, not just the price line.
+ */
+async function revertApprovalIfNeeded(orderId: string) {
+  const order = await db.query.orders.findFirst({ where: eq(orders.id, orderId) });
+  if (order?.status === "approved") {
+    await db.update(orders).set({ status: "in_review", updatedAt: new Date() }).where(eq(orders.id, orderId));
+  }
+}
+
+/**
  * Recomputes delivery/tip/tax/grand-total from the order's current add-ons
  * and overrides, and persists them onto the order row. Called after every
  * mutation below so `orders` always reflects live current totals — "Send
@@ -58,6 +70,10 @@ async function recomputeAndSaveOrderTotals(orderId: string) {
       tipCents: totals.tipCents,
       taxCents: totals.taxCents,
       grandTotalCents: totals.grandTotalCents,
+      // Per spec: any edit after approval requires a new version and
+      // re-approval — the customer's earlier signature no longer covers
+      // what's now on the order.
+      status: order.status === "approved" ? "in_review" : order.status,
       updatedAt: new Date(),
     })
     .where(eq(orders.id, orderId));
@@ -72,6 +88,7 @@ export async function replaceOrderItems(orderId: string, items: { menuItemId: st
   if (items.length) {
     await db.insert(orderItems).values(items.map((i) => ({ orderId, ...i })));
   }
+  await revertApprovalIfNeeded(orderId);
   revalidateOrder(orderId);
 }
 
@@ -139,11 +156,20 @@ export async function updateOrderOverrides(orderId: string, input: OrderOverride
   await recomputeAndSaveOrderTotals(orderId);
 }
 
-export async function updateOrderNotes(orderId: string, input: { internalNotes: string; customerNotes: string }) {
+export async function updateOrderNotes(
+  orderId: string,
+  input: { internalNotes: string; customerNotes: string; deliveryWindow: string; driverNotes: string },
+) {
   await requireStaff();
   await db
     .update(orders)
-    .set({ internalNotes: input.internalNotes, customerNotes: input.customerNotes, updatedAt: new Date() })
+    .set({
+      internalNotes: input.internalNotes,
+      customerNotes: input.customerNotes,
+      deliveryWindow: input.deliveryWindow || null,
+      driverNotes: input.driverNotes || null,
+      updatedAt: new Date(),
+    })
     .where(eq(orders.id, orderId));
   revalidateOrder(orderId);
 }

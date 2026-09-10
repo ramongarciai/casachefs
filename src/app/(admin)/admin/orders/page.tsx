@@ -34,7 +34,12 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Orders</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Orders</h1>
+        <a href="/api/admin/orders/export" className="text-sm text-primary hover:underline">
+          Export CSV
+        </a>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>

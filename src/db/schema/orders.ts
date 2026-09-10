@@ -96,6 +96,15 @@ export const orders = pgTable("orders", {
   customerNotes: text("customer_notes"),
   internalNotes: text("internal_notes"),
 
+  // The specific quote version the customer approved — set once, on
+  // approval. Any admin edit after that bumps status back so the next
+  // "Send revised quote" creates a new version requiring re-approval.
+  approvedQuoteId: text("approved_quote_id"),
+
+  // Operational fields for the BEO / kitchen sheet (section 4.5).
+  deliveryWindow: text("delivery_window"),
+  driverNotes: text("driver_notes"),
+
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 });

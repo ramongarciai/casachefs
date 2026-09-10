@@ -110,6 +110,34 @@ export async function sendQuoteEmail(quote: QuoteEmailSummary) {
   });
 }
 
+export async function sendAdminQuoteResponseNotification(params: {
+  orderId: string;
+  action: "changes_requested" | "declined";
+  note?: string;
+}) {
+  const resend = getResendClient();
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!resend || !adminEmail) {
+    console.warn("sendAdminQuoteResponseNotification: missing AUTH_RESEND_KEY or ADMIN_NOTIFICATION_EMAIL, skipping");
+    return;
+  }
+
+  const actionLabel = params.action === "changes_requested" ? "requested changes to" : "declined";
+  const siteUrl = getSiteUrl();
+
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM ?? "Casa Chefs <orders@casachefs.com>",
+    to: adminEmail,
+    subject: `Customer ${actionLabel} a quote — order #${params.orderId}`,
+    text: [
+      `A customer ${actionLabel} their quote.`,
+      "",
+      `Order: ${siteUrl}/admin/orders/${params.orderId}`,
+      params.note ? `\nNote: ${params.note}` : "",
+    ].join("\n"),
+  });
+}
+
 export async function sendAdminNotificationEmail(order: OrderEmailSummary) {
   const resend = getResendClient();
   const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
