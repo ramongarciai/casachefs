@@ -171,3 +171,18 @@
 - No real food photography — every menu item still renders without a photo (a phase-2 admin capability with no actual images uploaded). Polish here focused on typography/color/copy, not imagery that doesn't exist.
 - No dark-mode toggle UI — the dark palette tokens exist and are theme-correct, but nothing in the app lets a visitor switch to it yet (it would only ever activate via OS-level `prefers-color-scheme`).
 - Google Analytics / GA4 was not wired up (no GA property/ID exists); Vercel Analytics was chosen instead specifically because it requires no external account or API key to start collecting real data once deployed.
+
+## Post-launch: real credentials verification (2026-09-10/11)
+
+All 8 phases above were built and tested against a local embedded PGlite database with placeholder credentials. The user then provided real production credentials (Supabase Postgres, Google OAuth, Resend, Supabase Storage) via `.env.local` — the previous local-only config is preserved at `.env.local.pglite-dev-backup` (gitignored) in case local dev without real services is needed again.
+
+Verified against the real services, not just re-tested against PGlite:
+- `db:migrate` + `db:seed` ran clean against real Supabase Postgres (25 items / 4 bands / 26 add-ons / 8 packages confirmed by direct query).
+- `next build` and `next dev` run clean against real credentials — notably faster than PGlite, since postgres-js has no single-writer WASM contention (the intermittent `RuntimeError: Aborted()` build noise from phases 3/6 is specific to PGlite and doesn't occur here).
+- Placed a real order through the customer wizard end-to-end (event catering, 20 guests, $28/person → CAT_STD, $680.39 total) using the user's real email, explicitly authorized for this test. All 3 expected emails (Auth.js magic link, order confirmation, admin notification) confirmed received by the user.
+- Uploaded a real test photo through `/admin/menu/[id]` and confirmed it lands in the real Supabase Storage bucket (public URL, HTTP 200, `image/webp`) rather than the local `public/uploads` fallback.
+- Reviewed the test order in `/admin/orders/[id]` against real data — margin panel, items, and totals all correct.
+
+**Bug found and fixed during this round**: `deletePhoto` (`src/app/(admin)/admin/menu/actions.ts`) only ever deleted the `menu_item_photos` DB row — the actual thumb/medium/large files were never removed from wherever they were stored (Supabase Storage or the local fallback), silently accumulating orphaned files forever. Added `deleteMenuItemPhoto()` to `src/lib/storage.ts` (mirrors `uploadMenuItemPhoto`'s Supabase-vs-local branching) and wired it into `deletePhoto` via a `.returning()` on the DB delete so the photo's URL is available for cleanup; storage-cleanup failures are logged, not thrown, since the DB row (the user-visible "delete") should never be blocked or resurrected by a storage-side hiccup. Verified end-to-end against the real bucket: uploaded a photo, deleted it via the actual admin UI button, confirmed all 3 size variants now return "Object not found" instead of lingering.
+
+All test data created during this verification round (test order, test address, test photo + its storage files, temporary admin test sessions) was deleted afterward at the user's request. The one exception, left in place deliberately: the `customer`-role user account for the real email used to place the test order — kept so the user can test `/account` (order history, saved addresses) without creating a separate account later.

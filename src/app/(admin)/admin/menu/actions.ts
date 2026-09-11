@@ -7,7 +7,7 @@ import { menuItems, menuItemPhotos } from "@/db/schema/menu";
 import { bandMenuItems } from "@/db/schema/pricing";
 import { requireStaff } from "@/lib/auth-helpers";
 import { menuItemSchema, type MenuItemInput } from "@/lib/validations/menu-item";
-import { uploadMenuItemPhoto } from "@/lib/storage";
+import { uploadMenuItemPhoto, deleteMenuItemPhoto } from "@/lib/storage";
 
 function revalidateMenu(id?: string) {
   revalidatePath("/admin/menu");
@@ -152,7 +152,22 @@ export async function updatePhotoAlt(photoId: string, menuItemId: string, altTex
 
 export async function deletePhoto(photoId: string, menuItemId: string) {
   await requireStaff();
-  await db.delete(menuItemPhotos).where(eq(menuItemPhotos.id, photoId));
+  const [deleted] = await db
+    .delete(menuItemPhotos)
+    .where(eq(menuItemPhotos.id, photoId))
+    .returning({ url: menuItemPhotos.url });
+
+  if (deleted) {
+    try {
+      await deleteMenuItemPhoto(deleted.url);
+    } catch (err) {
+      // The DB row is already gone (the point of "delete" from the admin's
+      // perspective) — a storage cleanup failure shouldn't resurrect it or
+      // block the action. Worst case is an orphaned file, not a broken UI.
+      console.error("Failed to remove photo files from storage:", err);
+    }
+  }
+
   revalidateMenu(menuItemId);
 }
 
