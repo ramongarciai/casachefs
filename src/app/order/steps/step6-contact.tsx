@@ -147,14 +147,16 @@ export function Step6Contact({
                 <span>{centsToDollars(quote.addonsSubtotalCents)}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Delivery</span>
+            {quote.deliveryFeeCents > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Delivery</span>
               <span>{centsToDollars(quote.deliveryFeeCents)}</span>
-            </div>
+            </div>)}
+          {quote.tipCents > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Gratuity</span>
               <span>{centsToDollars(quote.tipCents)}</span>
-            </div>
+            </div>)}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tax</span>
               <span>{centsToDollars(quote.taxCents)}</span>
