@@ -30,8 +30,8 @@ function itemizedLines(order: OrderEmailSummary): string {
     lines.push(`Add-ons: ${centsToDollars(order.addonsSubtotalCents)}`);
   }
   lines.push(
-    `Delivery: ${centsToDollars(order.deliveryFeeCents)}`,
-    `Gratuity: ${centsToDollars(order.tipCents)}`,
+    ...(order.deliveryFeeCents > 0 ? [`Delivery: ${centsToDollars(order.deliveryFeeCents)}`] : []),
+    ...(order.tipCents > 0 ? [`Gratuity: ${centsToDollars(order.tipCents)}`] : []),
     `Tax: ${centsToDollars(order.taxCents)}`,
     `Grand total: ${centsToDollars(order.grandTotalCents)}`,
   );
