@@ -70,14 +70,16 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
             <Text>{money(data.addonsSubtotalCents)}</Text>
           </View>
         )}
-        <View style={styles.row}>
+        {data.deliveryFeeCents > 0 && (
+      <View style={styles.row}>
           <Text>Delivery</Text>
           <Text>{money(data.deliveryFeeCents)}</Text>
-        </View>
+        </View>)}
+        {data.tipCents > 0 && (
         <View style={styles.row}>
           <Text>Gratuity</Text>
           <Text>{money(data.tipCents)}</Text>
-        </View>
+        </View>)}
         <View style={styles.row}>
           <Text>Tax</Text>
           <Text>{money(data.taxCents)}</Text>
