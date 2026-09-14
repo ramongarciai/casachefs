@@ -61,7 +61,7 @@ export function Step4Budget({
           <div>
             <div className="font-medium">Per person</div>
             <div className="text-sm text-muted-foreground">
-              Delivery and gratuity are added on top of this number.
+              This is the price per person for food.
             </div>
           </div>
         </label>
@@ -70,7 +70,7 @@ export function Step4Budget({
           <div>
             <div className="font-medium">Total budget</div>
             <div className="text-sm text-muted-foreground">
-              Delivery and gratuity are included in this amount.
+              This is your total budget for food.
             </div>
           </div>
         </label>
