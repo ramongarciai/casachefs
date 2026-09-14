@@ -23,8 +23,7 @@ const fraunces = Fraunces({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const description =
-  "Catering, box lunches, and made-to-order frozen food in Houston, The Woodlands, and Magnolia, TX.";
-
+  "Catering, box lunches, and made-to-order frozen food in the Greater Houston area.";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
