@@ -1,10 +1,20 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-background px-6 text-center">
-      <h1 className="font-heading text-4xl font-semibold tracking-tight">Casa Chefs</h1>
+      <h1>
+        <Image
+          src="/casa-chefs-logo.png"
+          alt="Casa Chefs"
+          width={825}
+          height={1008}
+          priority
+          className="mx-auto h-auto w-[240px]"
+        />
+      </h1>
       <p className="max-w-md text-muted-foreground">
         Catering, box lunches, and made-to-order frozen food in the Greater Houston area.
       </p>
