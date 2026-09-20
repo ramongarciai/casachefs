@@ -63,6 +63,7 @@ export const step3Schema = z.object({
 export const step4Schema = z.object({
   budgetMode: z.enum(["per_person", "total"]),
   budgetAmountCents: z.coerce.number().int().min(1, "Enter a budget"),
+  taxIncluded: z.coerce.boolean().default(false),
 });
 
 export const step6Schema = z.object({

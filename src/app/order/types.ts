@@ -22,6 +22,7 @@ export interface WizardDraft {
   otherNote?: string;
   budgetMode?: "per_person" | "total";
   budgetAmountCents?: number;
+  budgetTaxIncluded?: boolean;
   quote?: GetQuoteResult;
   selectedPackageId?: string;
   selectedItemIds: string[];

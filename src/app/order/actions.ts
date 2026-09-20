@@ -88,6 +88,7 @@ export interface GetQuoteInput {
   guestCount: number;
   budgetMode: BudgetMode;
   budgetAmountCents: number;
+  taxIncluded: boolean;
   excludedAllergens: string[];
   requiredDiets: DietRestriction[];
   lowSpice: boolean;
@@ -112,7 +113,14 @@ export async function getQuoteAction(input: GetQuoteInput): Promise<GetQuoteResu
   const { bands, items, bandMenuItemIds, taxRateBps } = await loadPricingData();
   const serviceLine = serviceLineForOrderType(input.orderType);
 
-  const outcome = resolveBand(serviceLine, input.budgetMode, input.budgetAmountCents, input.guestCount, bands);
+  const outcome = resolveBand(
+    serviceLine,
+    input.budgetMode,
+    input.budgetAmountCents,
+    input.guestCount,
+    bands,
+    { taxRateBps, taxIncluded: input.taxIncluded },
+  );
   if (outcome.status === "gap") {
     return { status: "gap" };
   }
@@ -123,6 +131,7 @@ export async function getQuoteAction(input: GetQuoteInput): Promise<GetQuoteResu
     guestCount: input.guestCount,
     band: outcome.band,
     taxRateBps,
+    taxIncluded: input.taxIncluded,
   });
 
   const eligibleItemIds = bandMenuItemIds[outcome.band.code] ?? [];
@@ -210,6 +219,7 @@ export async function submitOrderAction(rawInput: unknown): Promise<SubmitOrderR
     input.budget.budgetAmountCents,
     input.event.guestCount,
     bands,
+    { taxRateBps, taxIncluded: input.budget.taxIncluded },
   );
 
   if (outcome.status === "gap") {
@@ -222,6 +232,7 @@ export async function submitOrderAction(rawInput: unknown): Promise<SubmitOrderR
     guestCount: input.event.guestCount,
     band: outcome.band,
     taxRateBps,
+    taxIncluded: input.budget.taxIncluded,
   });
 
   const eligibleItemIds = bandMenuItemIds[outcome.band.code] ?? [];

@@ -64,6 +64,7 @@ export function Step6Contact({
       budget: {
         budgetMode: draft.budgetMode!,
         budgetAmountCents: draft.budgetAmountCents!,
+        taxIncluded: draft.budgetTaxIncluded ?? false,
       },
       selectedItemIds: draft.selectedItemIds,
       selectedPackageId: draft.selectedPackageId,

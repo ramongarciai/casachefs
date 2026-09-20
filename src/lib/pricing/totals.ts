@@ -10,6 +10,8 @@ export interface CalculateTotalsParams {
   /** Event catering add-ons attached by the admin. Zero for box lunch. */
   addonsSubtotalCents?: number;
   taxRateBps: number;
+  /** Mode B only: whether the customer's stated total already includes tax. */
+  taxIncluded?: boolean;
 }
 
 /**
@@ -24,7 +26,7 @@ export interface CalculateTotalsParams {
  * PROGRESS.md; confirm with an accountant before this handles real orders.
  */
 export function calculateTotals(params: CalculateTotalsParams): QuoteTotals {
-  const { mode, amountCents, guestCount, band, addonsSubtotalCents = 0, taxRateBps } = params;
+  const { mode, amountCents, guestCount, band, addonsSubtotalCents = 0, taxRateBps, taxIncluded = false } = params;
 
   let pricePerPersonCents: number;
   let foodSubtotalCents: number;
@@ -33,8 +35,11 @@ export function calculateTotals(params: CalculateTotalsParams): QuoteTotals {
     pricePerPersonCents = amountCents;
     foodSubtotalCents = pricePerPersonCents * guestCount;
   } else {
-    const feePctFraction = bpsToFraction(band.deliveryPctBps) + bpsToFraction(band.tipPctBps);
-    foodSubtotalCents = roundCents(amountCents / (1 + feePctFraction));
+    const deliveryFraction = bpsToFraction(band.deliveryPctBps);
+    const tipFraction = bpsToFraction(band.tipPctBps);
+    const taxFraction = taxIncluded ? bpsToFraction(taxRateBps) : 0;
+    const denominator = (1 + deliveryFraction) * (1 + taxFraction) + tipFraction;
+    foodSubtotalCents = roundCents(amountCents / denominator);
     pricePerPersonCents = roundCents(foodSubtotalCents / guestCount);
   }
 

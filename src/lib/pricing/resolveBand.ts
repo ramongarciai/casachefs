@@ -31,14 +31,19 @@ export function resolveBand(
   amountCents: number,
   guestCount: number,
   bands: Band[],
+  taxOptions?: { taxRateBps: number; taxIncluded: boolean },
 ): ResolveBandOutcome {
   const candidates = bands.filter((b) => b.serviceLine === serviceLine);
 
   for (const band of candidates) {
+    const deliveryFraction = bpsToFraction(band.deliveryPctBps);
+    const tipFraction = bpsToFraction(band.tipPctBps);
+    const taxFraction = taxOptions?.taxIncluded ? bpsToFraction(taxOptions.taxRateBps) : 0;
+
     const foodPricePerPersonCents =
       mode === "per_person"
         ? amountCents
-        : amountCents / guestCount / (1 + bpsToFraction(band.deliveryPctBps) + bpsToFraction(band.tipPctBps));
+        : amountCents / guestCount / ((1 + deliveryFraction) * (1 + taxFraction) + tipFraction);
 
     if (
       foodPricePerPersonCents >= band.minPricePerPersonCents - BOUNDARY_EPSILON_CENTS &&

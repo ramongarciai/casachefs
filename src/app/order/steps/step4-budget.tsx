@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -22,6 +23,7 @@ export function Step4Budget({
 }) {
   const [mode, setMode] = useState<"per_person" | "total">(draft.budgetMode ?? "per_person");
   const [amount, setAmount] = useState(draft.budgetAmountCents ? (draft.budgetAmountCents / 100).toFixed(2) : "");
+  const [taxIncluded, setTaxIncluded] = useState(draft.budgetTaxIncluded ?? false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -39,11 +41,12 @@ export function Step4Budget({
         guestCount: draft.guestCount!,
         budgetMode: mode,
         budgetAmountCents: amountCents,
+        taxIncluded,
         excludedAllergens: Object.keys(draft.allergens),
         requiredDiets: Object.keys(draft.diets) as DietRestriction[],
         lowSpice: draft.lowSpiceGuestCount !== undefined,
       });
-      update({ budgetMode: mode, budgetAmountCents: amountCents, quote });
+      update({ budgetMode: mode, budgetAmountCents: amountCents, budgetTaxIncluded: taxIncluded, quote });
       next();
     });
   }
@@ -92,6 +95,13 @@ export function Step4Budget({
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
+
+      {mode === "total" && (
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox checked={taxIncluded} onCheckedChange={(v) => setTaxIncluded(v === true)} />
+          This budget already includes tax
+        </label>
+      )}
 
       <div className="flex justify-between">
         <Button type="button" variant="outline" onClick={back} disabled={isPending}>
